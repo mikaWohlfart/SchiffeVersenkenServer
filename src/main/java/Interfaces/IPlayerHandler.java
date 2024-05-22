@@ -1,4 +1,4 @@
-package Server;
+package Interfaces;
 
 public interface IPlayerHandler{
     void sendMessageToUser(String message);

@@ -1,17 +1,21 @@
 package Server;
 
+import Interfaces.IPlayerHandler;
+import Interfaces.ISchiffeVersenkenServer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class PlayerHandler implements IPlayerHandler{
+public class PlayerHandler implements IPlayerHandler {
     private ISchiffeVersenkenServer schiffeVersenkenServer;
     private String playername;
     private Socket clientSocket;
     private PrintWriter out;
     private SocketListener socketListener;
+
     public PlayerHandler(SchiffeVersenkenServer schiffeVersenkenServer, Socket socket, String playername) {
         this.clientSocket = socket;
         this.playername = playername;
