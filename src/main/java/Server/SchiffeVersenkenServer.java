@@ -1,8 +1,5 @@
 package Server;
 
-import Interfaces.IPlayerHandler;
-import Interfaces.ISchiffeVersenkenServer;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -10,49 +7,108 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.*;
 
-public class SchiffeVersenkenServer implements ISchiffeVersenkenServer {
+import Enum.ServerCommands;
+
+public class SchiffeVersenkenServer {
     private int PORT;
-    List<IPlayerHandler> playerHandler = new ArrayList<>();
     String currentPlayerName;
-    Map<PlayerCommands, Runnable> actions = new HashMap<>();
+    List<PlayerHandler> playerHandlers = new ArrayList<>();
 
     public SchiffeVersenkenServer() {
         setPORT();
         host();
-        playerCommandInputHandlerIndexed();
-
         int playerCount = 1;
-
         try {
             ServerSocket serverSocket = new ServerSocket(PORT);
             System.out.println("Server gestartet. Warte auf Verbindungen...");
-            while (true) {
+            while (playerCount <= 2) {
                 Socket clientSocket = serverSocket.accept();
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String currentPlayerNameExpression = in.readLine();
-                String[] currentPlayerNameInArray = currentPlayerNameExpression.split(" ");
-                if (playerCount < 2) {
-                    if (currentPlayerNameInArray[0] != null && currentPlayerNameInArray[0].equals(PlayerCommands.REGISTER.toString())) {
-                        currentPlayerName = currentPlayerNameInArray[1];
-                        System.out.println("Neue Verbindung von Spieler " + currentPlayerName);
-                        playerHandler.add(new PlayerHandler(this, clientSocket, currentPlayerName));
-                        playerCount++;
-                    } else {
-                        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                        out.println("REGISTRATION FAILED! PLEASE RESTART! USE REGISTER <yourPlayerName> INSTEAD!");
-                    }
-                }
+                PlayerHandler player = new PlayerHandler(this, clientSocket, playerCount - 1);
+                player.start();
+                playerHandlers.add(player);
+                playerCount++;
             }
+
+            waitingForRegistration();
+            waitingForRPS();
+            waitingForShipToPlaces();
+
+
+            //TODO
+        /*
+            Game plan:
+            1. Start screen
+                a. name
+                b. start or connect
+            2. Rock Paper Scissors
+            3. Ship placing
+            4. Defending / Attacking
+            5. End screen
+                a. score
+                b. play again
+                c. exit
+         */
+
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void playerCommandInputHandlerIndexed() {
-        actions.put(PlayerCommands.SHIP_ADD, () -> handleShipAdd());
-        actions.put(PlayerCommands.RPS, () -> handleRPS());
-        actions.put(PlayerCommands.BOMB, () -> handleBomb());
+    private void waitingForShipToPlaces() {
+
     }
+
+    private void waitingForRPS() throws InterruptedException {
+        int counter = 0;
+        while (counter < 2) {
+            counter = 0;
+            Thread.sleep(5000);
+            for (PlayerHandler p : playerHandlers) {
+                if (p.getRps() != null) {
+                    counter++;
+                }
+            }
+        }
+        if (playerHandlers.get(0).getRps().ordinal() == playerHandlers.get(1).getRps().ordinal()) {
+            for (PlayerHandler p : playerHandlers) {
+                p.sendMessageToUser(ServerCommands.TIE.toString());
+                p.restartRPS();
+            }
+            waitingForRPS();
+        } else if (playerHandlers.get(0).getRps().ordinal() == 0 && playerHandlers.get(1).getRps().ordinal() == 1) {
+            playerHandlers.get(0).sendMessageToUser(ServerCommands.LOST.toString());
+            playerHandlers.get(0).setRpsWon(false);
+            playerHandlers.get(1).sendMessageToUser(ServerCommands.WON.toString());
+            playerHandlers.get(1).setRpsWon(true);
+
+        } else {
+            playerHandlers.get(1).sendMessageToUser(ServerCommands.LOST.toString());
+            playerHandlers.get(1).setRpsWon(false);
+            playerHandlers.get(0).sendMessageToUser(ServerCommands.WON.toString());
+            playerHandlers.get(0).setRpsWon(true);
+        }
+
+
+    }
+
+    private void waitingForRegistration() throws InterruptedException {
+        System.out.println("WAITING FOR TWO PLAYERS TO REGISTER");
+        int counter = 0;
+        while (counter < 2) {
+            counter = 0;
+            Thread.sleep(5000);
+            for (PlayerHandler p : playerHandlers) {
+                if (p.getIsRegsitered()) {
+                    counter += 1;
+                    System.out.println("WAITING FOR " + (2 - counter) + " PLAYERS TO REGISTER");
+                }
+            }
+        }
+        System.out.println("TWO PLAYERS ARE REGISTERED");
+    }
+
 
     private void setPORT() {
         System.out.println("Bitte gebe den Port an, unter welchem du erreichbar sein möchtest:");
@@ -61,59 +117,18 @@ public class SchiffeVersenkenServer implements ISchiffeVersenkenServer {
     }
 
 
-    @Override
-    public void messageHandler(String message, String playername) {
-        String[] messageInParts = message.split(" ");
-        String commandSendByPlayer = messageInParts[0];
-        PlayerCommands[] playerCommands = PlayerCommands.values();
-        String commandFiltered = Arrays.stream(playerCommands)
-                .map(Enum::toString)
-                .filter(command -> command.equals(commandSendByPlayer))
-                .findFirst()
-                .orElse("FAILED");
-        System.out.println(commandFiltered + " || ist gleich Failed?" + commandFiltered.equals("FAILED"));
-
-        if (!(commandFiltered.equals("FAILED"))) {
-            commandIsValid(messageInParts);
-        } else {
-            for (IPlayerHandler player : playerHandler) {
-                System.out.println();
-                if (player.getPlayername().equals(playername)) {
-                    player.sendMessageToUser(ServerCommands.UNKNOWN_COMMAND.toString());
-                    break;
-                }
-            }
-        }
-    }
-
-    private void commandIsValid(String[] messageInParts) {
-        PlayerCommands befehl = PlayerCommands.valueOf(messageInParts[0]);
-        Runnable action = actions.getOrDefault(befehl, () -> {
-        });
-        action.run();
-    }
-
-    private static void handleShipAdd() {
-
-        System.out.println("Befehl SHIP_ADD verarbeitet.");
-    }
-
-    private static void handleRPS() {
-        System.out.println("Befehl RPS verarbeitet.");
-    }
-
-    private static void handleBomb() {
-        System.out.println("Befehl BOMB verarbeitet.");
-    }
-
     public void host() {
         try {
-            System.out.println("Deine Email-Adresse: " + InetAddress.getLocalHost().getHostAddress());
+            System.out.println("Deine IP-Adresse: " + InetAddress.getLocalHost().getHostAddress());
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         //return System.getProperty("host", "localhost");
+    }
+
+    private void startGameLobby() {
+
     }
 }
