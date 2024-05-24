@@ -24,6 +24,7 @@ public class SchiffeVersenkenServer {
             ServerSocket serverSocket = new ServerSocket(PORT);
             System.out.println("Server gestartet. Warte auf Verbindungen...");
             while (playerCount <= 2) {
+                System.out.println("Playercount: " + playerCount);
                 Socket clientSocket = serverSocket.accept();
                 PlayerHandler player = new PlayerHandler(this, clientSocket, playerCount - 1, new Board());
                 player.start();
@@ -206,14 +207,7 @@ public class SchiffeVersenkenServer {
         try {
             System.out.println("Deine IP-Adresse: " + InetAddress.getLocalHost().getHostAddress());
         } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
-        //return System.getProperty("host", "localhost");
-    }
-
-    private void startGameLobby() {
-
     }
 }

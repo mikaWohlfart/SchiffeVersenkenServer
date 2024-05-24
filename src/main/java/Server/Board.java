@@ -13,6 +13,19 @@ public class Board {
     public Board(List<Ship> ships) {
         board = new int[BOARD_SIZE][BOARD_SIZE];
         this.ships = ships;
+        for (Ship ship : ships) {
+            List<int[]> coordinates = ship.getCoordinates();
+            for (int i = 0; i < coordinates.size(); i++) {
+                for (int k = 0; k < BOARD_SIZE; k++) {
+                    for (int j = 0; j < BOARD_SIZE; j++) {
+                        if (coordinates.get(i)[0] == k && coordinates.get(i)[1] == j) {
+                            board[k][j] = 4;
+                        }
+                    }
+                }
+
+            }
+        }
     }
 
     public Board() {
@@ -42,6 +55,7 @@ public class Board {
         }
         return false;
     }
+
 
     private void markBoard(int size, int column, int row, Rotation rotation) {
         for (int i = 0; i < size; i++) {

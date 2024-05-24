@@ -42,8 +42,7 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         playerAlreadyAttacked = false;
     }
 
-    public PlayerHandler() {
-    }
+    public PlayerHandler() {}
 
     public void run() {
         try {
@@ -91,7 +90,7 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     }
 
     private void handleRegister(String[] message) {
-        if (message[1] != null && message[1].length() > 1) {
+        if (message[1] != null && !message[1].isEmpty()) {
             playername = message[1];
             isRegistered = true;
             sendMessageToUser(ServerCommands.REGISTERED.name());

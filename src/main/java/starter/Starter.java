@@ -23,12 +23,12 @@ public class Starter {
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
             Thread receiverThread = new Thread(() -> {
-                try{
+                try {
                     String message = null;
-                    while ((message = in.readLine()) !=null){
+                    while ((message = in.readLine()) != null) {
                         System.out.println("Server: " + message);
                     }
-                }catch (IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
 
@@ -36,8 +36,34 @@ public class Starter {
             receiverThread.start();
 
             Scanner userInputScanner = new Scanner(System.in);
+            out.println("REGISTER T");
+            out.flush();
+            Thread.sleep(1000);
+            System.out.println("Warte auf eingabe");
+            String message = userInputScanner.nextLine();
+            System.out.println("Warte auf eingabe");
+            out.println("RPS " + message);
+            out.flush();
+            String[] placementCommands = {
+                    "SHIP_ADD SUBMARINE A1 RIGHT",
+                    "SHIP_ADD CRUISER F0 DOWN",
+                    "SHIP_ADD DESTROYER H0 RIGHT",
+                    "SHIP_ADD DESTROYER C3 RIGHT",
+                    "SHIP_ADD SUBMARINE I4 RIGHT",
+                    "SHIP_ADD SUBMARINE E5 DOWN",
+                    "SHIP_ADD DESTROYER A7 DOWN",
+                    "SHIP_ADD BATTLESHIP C7 RIGHT",
+                    "SHIP_ADD SUBMARINE J8 DOWN",
+                    "SHIP_ADD CRUISER E9 RIGHT"
+            };
+            for (String command : placementCommands) {
+                out.println(command);
+                out.flush();
+                Thread.sleep(1000);
+            }
+
             while (true) {
-                String message = userInputScanner.nextLine();
+                message = userInputScanner.nextLine();
                 out.println(message);
                 if (message.equalsIgnoreCase("bye")) {
                     break;
@@ -48,6 +74,8 @@ public class Starter {
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
     }
