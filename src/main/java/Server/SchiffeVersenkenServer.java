@@ -36,7 +36,7 @@ public class SchiffeVersenkenServer {
             System.out.println("REGISTRATION FINISHED");
             boolean playAgain = true;
 
-            do{
+            do {
                 waitingForShipToPlaces();
                 System.out.println("SHIPS_PLACED FINISHED");
                 playerHandlers.get(0).setEnemyShips(playerHandlers.get(1).getShips());
@@ -62,12 +62,12 @@ public class SchiffeVersenkenServer {
                 System.out.println("Waiting for attacker move...");
                 playUntilSomeoneWon();
                 for (PlayerHandler player : playerHandlers) {
-                    if ( !player.isWantsToPlayAgain()) {
-                       playAgain = false;
-                       break;
+                    if (!player.isWantsToPlayAgain()) {
+                        playAgain = false;
+                        break;
                     }
                 }
-            }while (playAgain);
+            } while (playAgain);
 
 
             //TODO
@@ -104,20 +104,33 @@ public class SchiffeVersenkenServer {
                     while (!player.playerAlreadyAttacked()) {
                         Thread.sleep(500);
                     }
+
                 }
             }
 
             for (PlayerHandler player : playerHandlers) {
                 if (player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())) {
                     playerDefender = player;
+
+                } else {
+                    playerAttacker = player;
                 }
             }
+
             if (!playerAttacker.isAttackHitted()) {
-                resetparameters(playerAttacker);
                 changeRoles();
-            }else{
+            }
+
+            for (PlayerHandler player : playerHandlers) {
+                if (player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())) {
+                    player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
+                } else {
+                    player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToStringForAttacker());
+                }
                 resetparameters(playerAttacker);
             }
+
+
             someonewons = checkIfSomeoneWons(playerDefender, playerAttacker);
         }
     }
@@ -143,16 +156,19 @@ public class SchiffeVersenkenServer {
         return false;
     }
 
-    private void changeRoles() {
-        for (PlayerHandler player : playerHandlers) {
-            if (player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())) {
-                player.setPlayerStatus(ServerCommands.ATTACKER.name());
-                player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
-            } else {
-                player.setPlayerStatus(ServerCommands.DEFENDER.name());
-                player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
-            }
+    private synchronized void changeRoles() {
+        if (playerHandlers.get(0).getPlayerStatus().equals(ServerCommands.DEFENDER.name())) {
+            playerHandlers.get(0).setPlayerStatus(ServerCommands.ATTACKER.name());
+            //playerHandlers.get(0).sendMessageToUser(ServerCommands.ATTACKER.name() + " " + playerHandlers.get(0).getAttackerBoard().castToString());
+            playerHandlers.get(1).setPlayerStatus(ServerCommands.DEFENDER.name());
+            //playerHandlers.get(1).sendMessageToUser(ServerCommands.DEFENDER.name() + " " + playerHandlers.get(1).getDefenderBoard().castToString());
+        } else {
+            playerHandlers.get(1).setPlayerStatus(ServerCommands.ATTACKER.name());
+            //playerHandlers.get(1).sendMessageToUser(ServerCommands.ATTACKER.name() + " " + playerHandlers.get(1).getAttackerBoard().castToString());
+            playerHandlers.get(0).setPlayerStatus(ServerCommands.DEFENDER.name());
+            //playerHandlers.get(0).sendMessageToUser(ServerCommands.DEFENDER.name() + " " + playerHandlers.get(0).getDefenderBoard().castToString());
         }
+
     }
 
     private void waitingForShipToPlaces() {

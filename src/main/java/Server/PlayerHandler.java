@@ -273,9 +273,6 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
                 attackHitted = attackerBoard.placeBomb(attackerCoordinates.ordinal(), attackerRow);
                 if (attackHitted) {
                     System.out.println("Attack hitted...");
-                    sendMessageToUser(ServerCommands.HIT.name());
-                }else {
-                    sendMessageToUser(ServerCommands.MISS.name());
                 }
                 playerAlreadyAttacked = true;
             }
