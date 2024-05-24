@@ -73,9 +73,11 @@ public class Board {
                 sb.append(castIntToChar(j));
                 sb.append(":");
                 sb.append(board[j][i]);
+                sb.append(",");
             }
-            sb.append("\n");
+            sb.append("},");
         }
+        sb.deleteCharAt(sb.length() - 1);
         sb.append("}");
         return sb.toString();
     }
@@ -96,8 +98,13 @@ public class Board {
                 return Coordinates.F.name();
             case 6:
                 return Coordinates.G.name();
-            default:
+            case 7:
                 return Coordinates.H.name();
+            case 8:
+                return Coordinates.I.name();
+            default:
+                return Coordinates.J.name();
+
         }
     }
 }

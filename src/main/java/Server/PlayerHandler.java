@@ -117,7 +117,6 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         } else {
             sendMessageToUser(ServerCommands.REJECTED.name());
         }
-        System.out.println("Befehl SHIP_ADD verarbeitet.");
     }
 
     private boolean checkShipLimitReachedPerType(String shipType) {
@@ -186,7 +185,6 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         if (ships != null) {
             boolean collisiondetected = checkIfShipsCollide(coordinatesInInt);
             if (!collisiondetected) {
-                System.out.println("test");
                 ships.add(new Ship(ShipType.valueOf(shipType), coordinatesInInt, Rotation.valueOf(rotation)));
                 return true;
             }
@@ -259,7 +257,6 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
 
     private void handleRPS(String[] message) {
         rps = RPS_GAME.valueOf(message[1]);
-        System.out.println("Befehl RPS verarbeitet.");
     }
 
     private void handleBomb(String[] message) {
@@ -272,7 +269,6 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
             }
 
         }
-        System.out.println("Befehl BOMB verarbeitet.");
     }
 
     private void playerCommandInputHandlerIndexed() {

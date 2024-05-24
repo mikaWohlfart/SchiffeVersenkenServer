@@ -45,11 +45,11 @@ public class SchiffeVersenkenServer {
             //Inital Send
             for (PlayerHandler player : playerHandlers) {
                 if(player.getRpsWon()){
-                    player.setPlayerStatus(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
+                    player.setPlayerStatus(ServerCommands.ATTACKER.name());
                     player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
                 }else {
                     player.setPlayerStatus(ServerCommands.DEFENDER.name());
-                    player.sendMessageToUser(ServerCommands.DEFENDER.name());
+                    player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
                 }
             }
 
