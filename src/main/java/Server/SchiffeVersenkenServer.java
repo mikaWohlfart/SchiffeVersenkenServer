@@ -34,28 +34,40 @@ public class SchiffeVersenkenServer {
 
             waitingForRegistration();
             System.out.println("REGISTRATION FINISHED");
-            waitingForShipToPlaces();
-            System.out.println("SHIPS_PLACED FINISHED");
-            waitingForRPS();
-            System.out.println("RPS FINISHED");
+            boolean playAgain = true;
 
-            for (PlayerHandler player : playerHandlers) {
-                player.setDefenderBoard(player.ships);
-            }
+            do{
+                waitingForShipToPlaces();
+                System.out.println("SHIPS_PLACED FINISHED");
+                playerHandlers.get(0).setEnemyShips(playerHandlers.get(1).getShips());
+                playerHandlers.get(1).setEnemyShips(playerHandlers.get(0).getShips());
+                waitingForRPS();
+                System.out.println("RPS FINISHED");
 
-            //Inital Send
-            for (PlayerHandler player : playerHandlers) {
-                if (player.getRpsWon()) {
-                    player.setPlayerStatus(ServerCommands.ATTACKER.name());
-                    player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
-                } else {
-                    player.setPlayerStatus(ServerCommands.DEFENDER.name());
-                    player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
+                for (PlayerHandler player : playerHandlers) {
+                    player.setDefenderBoard(player.ships);
                 }
-            }
 
-            System.out.println("Waiting for attacker move...");
-            extracted();
+                //Inital Send
+                for (PlayerHandler player : playerHandlers) {
+                    if (player.getRpsWon()) {
+                        player.setPlayerStatus(ServerCommands.ATTACKER.name());
+                        player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToStringForAttacker());
+                    } else {
+                        player.setPlayerStatus(ServerCommands.DEFENDER.name());
+                        player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
+                    }
+                }
+
+                System.out.println("Waiting for attacker move...");
+                playUntilSomeoneWon();
+                for (PlayerHandler player : playerHandlers) {
+                    if ( !player.isWantsToPlayAgain()) {
+                       playAgain = false;
+                       break;
+                    }
+                }
+            }while (playAgain);
 
 
             //TODO
@@ -80,7 +92,7 @@ public class SchiffeVersenkenServer {
         }
     }
 
-    public void extracted() throws InterruptedException {
+    public void playUntilSomeoneWon() throws InterruptedException {
         boolean someonewons = false;
         while (!someonewons) {
             PlayerHandler playerAttacker = null;
@@ -100,13 +112,13 @@ public class SchiffeVersenkenServer {
                     playerDefender = player;
                 }
             }
-            someonewons = checkIfSomeoneWons(playerDefender, playerAttacker);
             if (!playerAttacker.isAttackHitted()) {
                 resetparameters(playerAttacker);
                 changeRoles();
             }else{
                 resetparameters(playerAttacker);
             }
+            someonewons = checkIfSomeoneWons(playerDefender, playerAttacker);
         }
     }
 

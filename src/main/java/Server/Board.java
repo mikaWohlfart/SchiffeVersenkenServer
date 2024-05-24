@@ -3,6 +3,7 @@ package Server;
 import Enum.Coordinates;
 import Enum.Rotation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
@@ -30,8 +31,16 @@ public class Board {
 
     public Board() {
         board = new int[BOARD_SIZE][BOARD_SIZE];
+        ships = new ArrayList<>();
     }
 
+    public void setShips(List<Ship> ships) {
+        this.ships = ships;
+    }
+
+    public int[][] getBoard() {
+        return board;
+    }
 
     public boolean placeBomb(int column, int row) {
         if (checkIfBombCanBePlaced(column, row)) {
@@ -41,8 +50,9 @@ public class Board {
                     for (int[] coordinate : coordinates) {
                         if (coordinate[0] == column && coordinate[1] == row) {
                             ship.markHit();
+                            board[coordinate[0]][coordinate[1]] = 2;
                             if (ship.isShipDestroyed()) {
-                                markBoard(ship.getCoordinates().size(), column, row, ship.getRotation());
+                                markBoard(ship.getCoordinates());
                             }
                         }
                     }
@@ -57,21 +67,26 @@ public class Board {
     }
 
 
-    private void markBoard(int size, int column, int row, Rotation rotation) {
-        for (int i = 0; i < size; i++) {
-            if (rotation == Rotation.RIGHT) {
-                board[column][row] = 3;
-                column += 1;
-            }
+    private void markBoard(List<int[]> coordinates) {
+        for (int[] coordinate : coordinates) {
+            board[coordinate[0]][coordinate[1]] = 3;
         }
     }
 
     private boolean checkIfPlaceIsUsedByBoat(int column, int row) {
-        return board[column][row] == 4;
+        for (Ship ship : ships) {
+            List<int[]> coordinates = ship.getCoordinates();
+            for (int[] coordinate : coordinates) {
+                if (coordinate[0] == column && coordinate[1] == row) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean checkIfBombCanBePlaced(int column, int row) {
-        if (board[column][row] == 0) {
+        if (board[column][row] == 0 || board[column][row] == 4) {
             return true;
         }
         return false;
@@ -84,9 +99,33 @@ public class Board {
             sb.append("\"" + i + "\"");
             sb.append(":{");
             for (int j = 0; j < BOARD_SIZE; j++) {
-                sb.append("\"" + castIntToChar(j)+ "\"");
+                sb.append("\"" + castIntToChar(j) + "\"");
                 sb.append(":");
                 sb.append("\"" + board[j][i] + "\"");
+                sb.append(",");
+            }
+            sb.deleteCharAt(sb.length() - 1);
+            sb.append("},");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append("}");
+        return sb.toString();
+    }
+
+    public String castToStringForAttacker() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            sb.append("\"" + i + "\"");
+            sb.append(":{");
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                sb.append("\"" + castIntToChar(j) + "\"");
+                sb.append(":");
+                if (board[j][i] == 4) {
+                    sb.append("\"" + 0 + "\"");
+                } else {
+                    sb.append("\"" + board[j][i] + "\"");
+                }
                 sb.append(",");
             }
             sb.deleteCharAt(sb.length() - 1);

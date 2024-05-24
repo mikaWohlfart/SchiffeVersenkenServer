@@ -30,6 +30,8 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     private Board defenderBoard;
     private boolean playerAlreadyAttacked;
     private boolean attackHitted;
+    private boolean wantsToPlayAgain;
+    private List<Ship> enemyShips = new ArrayList<>();
 
     Map<PlayerCommands, Methods> actions = new HashMap<>();
     List<Ship> ships = new ArrayList<>();
@@ -43,7 +45,8 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         playerAlreadyAttacked = false;
     }
 
-    public PlayerHandler() {}
+    public PlayerHandler() {
+    }
 
     public void run() {
         try {
@@ -203,8 +206,8 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
                     return true;
                 }
             }
-        }else{
-            if(koordinatesInInt.get(0)[0] >= 10 || koordinatesInInt.get(0)[1] >= 10){
+        } else {
+            if (koordinatesInInt.get(0)[0] >= 10 || koordinatesInInt.get(0)[1] >= 10) {
                 return true;
             }
         }
@@ -240,7 +243,6 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
             int koordinateColumnInt = Coordinates.valueOf(coordinateColumn).ordinal();
             int koordinateRowInt = Integer.parseInt(coordinateRow);
             koordinateRowInt -= 1;
-            System.out.println("10.... " + koordinateRowInt);
             coordinatesInInt.add(new int[]{koordinateColumnInt, koordinateRowInt});
             for (int i = 0; i < shipTypeEnum.getLength() - 1; i++) {
                 if (rotationEnum == Rotation.RIGHT) {
@@ -269,14 +271,16 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
                 int attackerRow = Integer.parseInt(message[1].substring(1));
                 attackerRow--;
                 attackHitted = attackerBoard.placeBomb(attackerCoordinates.ordinal(), attackerRow);
+                if (attackHitted) {
+                    System.out.println("Attack hitted...");
+                    sendMessageToUser(ServerCommands.HIT.name());
+                }else {
+                    sendMessageToUser(ServerCommands.MISS.name());
+                }
                 playerAlreadyAttacked = true;
             }
 
         }
-    }
-
-    public synchronized void notifyServer(){
-        notifyAll();
     }
 
     private void playerCommandInputHandlerIndexed() {
@@ -357,5 +361,26 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
 
     public void setPlayerAlreadyAttacked(boolean b) {
         playerAlreadyAttacked = b;
+    }
+
+    public boolean isWantsToPlayAgain() {
+        return wantsToPlayAgain;
+    }
+
+    public List<Ship> getEnemyShips() {
+        return enemyShips;
+    }
+
+    public void setEnemyShips(List<Ship> enemyShips) {
+        attackerBoard.setShips(enemyShips);
+        this.enemyShips = enemyShips;
+    }
+
+    public List<Ship> getShips() {
+        return ships;
+    }
+
+    public void setShips(List<Ship> ships) {
+        this.ships = ships;
     }
 }

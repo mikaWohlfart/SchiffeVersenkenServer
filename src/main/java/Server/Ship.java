@@ -28,8 +28,11 @@ public class Ship {
     }
 
     public void markHit() {
-        if (hits.size() - 1 == shipType.getLength()) {
-            hits.add(true);
+        for (int i = 0; i < hits.size(); i++) {
+            if (!hits.get(i)) {
+                hits.set(i, true);
+                break;
+            }
         }
     }
 
