@@ -65,6 +65,7 @@ public class Starter {
             while (true) {
                 message = userInputScanner.nextLine();
                 out.println(message);
+                out.flush();
                 if (message.equalsIgnoreCase("bye")) {
                     break;
                 }

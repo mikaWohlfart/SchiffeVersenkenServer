@@ -39,42 +39,23 @@ public class SchiffeVersenkenServer {
             waitingForShipToPlaces();
             System.out.println("SHIPS_PLACED FINISHED");
 
-            for(PlayerHandler player : playerHandlers) {
+            for (PlayerHandler player : playerHandlers) {
                 player.setDefenderBoard(player.ships);
             }
 
             //Inital Send
             for (PlayerHandler player : playerHandlers) {
-                if(player.getRpsWon()){
+                if (player.getRpsWon()) {
                     player.setPlayerStatus(ServerCommands.ATTACKER.name());
                     player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
-                }else {
+                } else {
                     player.setPlayerStatus(ServerCommands.DEFENDER.name());
                     player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
                 }
             }
 
             System.out.println("Waiting for attacker move...");
-            while(running){
-                PlayerHandler playerAttacker = null;
-                PlayerHandler playerDefender = null;
-                //Waiting for Attackermove
-                for(PlayerHandler player : playerHandlers) {
-                    if(player.getPlayerStatus().equals(ServerCommands.ATTACKER.name())){
-                        playerAttacker = player;
-                        while(!player.playerAlreadyAttacked()){}
-                    }
-                }
-
-                for(PlayerHandler player : playerHandlers) {
-                    if(player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())){
-                        playerDefender = player;
-                    }
-                }
-                checkIfSomeoneWons(playerDefender, playerAttacker);
-
-                changeRoles();
-            }
+            extracted();
 
 
             //TODO
@@ -99,25 +80,65 @@ public class SchiffeVersenkenServer {
         }
     }
 
-    private static void checkIfSomeoneWons(PlayerHandler playerDefender, PlayerHandler playerAttacker) {
-        int counter = 0;
-        for(Ship ship: playerDefender.ships){
-            if (ship.isShipDestroyed()){
-                counter++;
+    public void extracted() throws InterruptedException {
+        boolean someonewons = false;
+        while (!someonewons) {
+            PlayerHandler playerAttacker = null;
+            PlayerHandler playerDefender = null;
+            //Waiting for Attackermove
+            for (PlayerHandler player : playerHandlers) {
+                if (player.getPlayerStatus().equals(ServerCommands.ATTACKER.name())) {
+                    playerAttacker = player;
+                    while (!player.playerAlreadyAttacked()) {
+                        Thread.sleep(500);
+                    }
+                }
             }
-        }
-        if(counter == playerDefender.ships.size()){
-            playerDefender.sendMessageToUser("LOST");
-            playerAttacker.sendMessageToUser("WON");
+
+            for (PlayerHandler player : playerHandlers) {
+                if (player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())) {
+                    playerDefender = player;
+                }
+            }
+            someonewons = checkIfSomeoneWons(playerDefender, playerAttacker);
+            if (!playerAttacker.isAttackHitted()) {
+                resetparameters(playerAttacker);
+                changeRoles();
+            }else{
+                resetparameters(playerAttacker);
+            }
         }
     }
 
+    private void resetparameters(PlayerHandler playerAttacker) {
+        playerAttacker.setAttackHitted(false);
+        playerAttacker.setPlayerAlreadyAttacked(false);
+    }
+
+    private boolean checkIfSomeoneWons(PlayerHandler playerDefender, PlayerHandler playerAttacker) {
+        int counter = 0;
+        for (Ship ship : playerDefender.ships) {
+            if (ship.isShipDestroyed()) {
+                counter++;
+            }
+        }
+        playerDefender.sendMessageToUser((10 - counter) + " SHIPS LEFT");
+        if (counter == playerDefender.ships.size()) {
+            playerDefender.sendMessageToUser(ServerCommands.LOST.name());
+            playerAttacker.sendMessageToUser(ServerCommands.WON.name());
+            return true;
+        }
+        return false;
+    }
+
     private void changeRoles() {
-        for(PlayerHandler player : playerHandlers) {
-            if(player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())){
+        for (PlayerHandler player : playerHandlers) {
+            if (player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())) {
                 player.setPlayerStatus(ServerCommands.ATTACKER.name());
-            }else {
+                player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
+            } else {
                 player.setPlayerStatus(ServerCommands.DEFENDER.name());
+                player.sendMessageToUser(ServerCommands.DEFENDER.name() + " " + player.getDefenderBoard().castToString());
             }
         }
     }
@@ -130,7 +151,7 @@ public class SchiffeVersenkenServer {
             System.out.println(player.ships.size());
             if (player.ships.size() == 10) {
                 counter += 1;
-            }else {
+            } else {
                 counter = 0;
             }
         }

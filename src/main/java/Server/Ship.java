@@ -34,7 +34,13 @@ public class Ship {
     }
 
     public boolean isShipDestroyed() {
-        return hits.size() == shipType.getLength();
+        int counter = 0;
+        for (Boolean hit : hits) {
+            if (hit) {
+                counter++;
+            }
+        }
+        return counter == coordinates.size();
     }
 
     private String integerKoordinateToChar(int i) {

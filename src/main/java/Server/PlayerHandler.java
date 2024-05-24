@@ -29,6 +29,7 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     private Board attackerBoard;
     private Board defenderBoard;
     private boolean playerAlreadyAttacked;
+    private boolean attackHitted;
 
     Map<PlayerCommands, Methods> actions = new HashMap<>();
     List<Ship> ships = new ArrayList<>();
@@ -261,13 +262,18 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     private void handleBomb(String[] message) {
         if (playerStatus.equals(ServerCommands.ATTACKER.name()) && !playerAlreadyAttacked) {
             if (message[1] != null && message[1].length() == 2) {
-                int attackerColumn = Integer.parseInt(message[1].substring(0, 1));
+                String attackerColumn = (message[1].substring(0, 1));
+                Coordinates attackerCoordinates = Coordinates.valueOf(attackerColumn);
                 int attackerRow = Integer.parseInt(message[1].substring(1, 2));
-                attackerBoard.placeBomb(attackerColumn, attackerRow);
+                attackHitted = attackerBoard.placeBomb(attackerCoordinates.ordinal(), attackerRow);
                 playerAlreadyAttacked = true;
             }
 
         }
+    }
+
+    public synchronized void notifyServer(){
+        notifyAll();
     }
 
     private void playerCommandInputHandlerIndexed() {
@@ -336,5 +342,17 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
 
     public boolean playerAlreadyAttacked() {
         return playerAlreadyAttacked;
+    }
+
+    public boolean isAttackHitted() {
+        return attackHitted;
+    }
+
+    public void setAttackHitted(boolean b) {
+        attackHitted = b;
+    }
+
+    public void setPlayerAlreadyAttacked(boolean b) {
+        playerAlreadyAttacked = b;
     }
 }
