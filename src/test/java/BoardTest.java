@@ -59,4 +59,6 @@ public class BoardTest {
         board.placeBomb(2, 0);
         boolean result = board.placeBomb(1, 0);
         assertTrue(result, "Bomb should hit a ship at (1, 0)");
-        assertEquals(3, board.getBoard()[0][0], "Ship shoul
+        assertEquals(3, board.getBoard()[0][0], "Ship should be destroyed after hits");
+    }
+}
