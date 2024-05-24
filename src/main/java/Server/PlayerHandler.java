@@ -264,7 +264,8 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
             if (message[1] != null && message[1].length() == 2) {
                 String attackerColumn = (message[1].substring(0, 1));
                 Coordinates attackerCoordinates = Coordinates.valueOf(attackerColumn);
-                int attackerRow = Integer.parseInt(message[1].substring(1, 2));
+                int attackerRow = Integer.parseInt(message[1].substring(1, message[1].length() - 1));
+                attackerRow--;
                 attackHitted = attackerBoard.placeBomb(attackerCoordinates.ordinal(), attackerRow);
                 playerAlreadyAttacked = true;
             }
