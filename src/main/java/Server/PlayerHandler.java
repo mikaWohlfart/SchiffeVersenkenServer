@@ -195,11 +195,11 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     public boolean checkIfShipsCollide(List<int[]> koordinatesInInt) {
         if (koordinatesInInt.size() > 1) {
             if (koordinatesInInt.get(0)[0] < koordinatesInInt.get(1)[0]) {
-                if (koordinatesInInt.get(0)[0] + koordinatesInInt.size() >= 10) {
+                if (koordinatesInInt.get(0)[0] + (koordinatesInInt.size() - 1) >= 10) {
                     return true;
                 }
             } else if (koordinatesInInt.get(0)[1] < koordinatesInInt.get(1)[1]) {
-                if (koordinatesInInt.get(0)[1] + koordinatesInInt.size() >= 10) {
+                if (koordinatesInInt.get(0)[1] + (koordinatesInInt.size() - 1) >= 10) {
                     return true;
                 }
             }
@@ -234,12 +234,13 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         ShipType shipTypeEnum = ShipType.valueOf(shipType);
         Rotation rotationEnum = Rotation.valueOf(rotation);
 
-        if (coordinates != null && coordinates.length() == 2) {
+        if (coordinates != null && coordinates.length() >= 2) {
             String coordinateColumn = coordinates.substring(0, 1);
             String coordinateRow = coordinates.substring(1);
             int koordinateColumnInt = Coordinates.valueOf(coordinateColumn).ordinal();
             int koordinateRowInt = Integer.parseInt(coordinateRow);
             koordinateRowInt -= 1;
+            System.out.println("10.... " + koordinateRowInt);
             coordinatesInInt.add(new int[]{koordinateColumnInt, koordinateRowInt});
             for (int i = 0; i < shipTypeEnum.getLength() - 1; i++) {
                 if (rotationEnum == Rotation.RIGHT) {
