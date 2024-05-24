@@ -34,10 +34,10 @@ public class SchiffeVersenkenServer {
 
             waitingForRegistration();
             System.out.println("REGISTRATION FINISHED");
-            waitingForRPS();
-            System.out.println("RPS FINISHED");
             waitingForShipToPlaces();
             System.out.println("SHIPS_PLACED FINISHED");
+            waitingForRPS();
+            System.out.println("RPS FINISHED");
 
             for (PlayerHandler player : playerHandlers) {
                 player.setDefenderBoard(player.ships);

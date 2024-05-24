@@ -81,12 +81,12 @@ public class Board {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         for (int i = 0; i < BOARD_SIZE; i++) {
-            sb.append(i);
+            sb.append("\"" + i + "\"");
             sb.append(":{");
             for (int j = 0; j < BOARD_SIZE; j++) {
-                sb.append(castIntToChar(j));
+                sb.append("\"" + castIntToChar(j)+ "\"");
                 sb.append(":");
-                sb.append(board[j][i]);
+                sb.append("\"" + board[j][i] + "\"");
                 sb.append(",");
             }
             sb.append("},");
