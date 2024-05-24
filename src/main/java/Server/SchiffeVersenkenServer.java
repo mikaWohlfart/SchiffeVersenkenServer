@@ -11,10 +11,12 @@ import Enum.ServerCommands;
 
 public class SchiffeVersenkenServer {
     private int PORT;
-    String currentPlayerName;
+    int currenplayernumber;
     List<PlayerHandler> playerHandlers = new ArrayList<>();
+    boolean running;
 
     public SchiffeVersenkenServer() {
+        running = true;
         setPORT();
         host();
         int playerCount = 1;
@@ -23,15 +25,55 @@ public class SchiffeVersenkenServer {
             System.out.println("Server gestartet. Warte auf Verbindungen...");
             while (playerCount <= 2) {
                 Socket clientSocket = serverSocket.accept();
-                PlayerHandler player = new PlayerHandler(this, clientSocket, playerCount - 1);
+                PlayerHandler player = new PlayerHandler(this, clientSocket, playerCount - 1, new Board());
                 player.start();
                 playerHandlers.add(player);
                 playerCount++;
             }
 
             waitingForRegistration();
+            System.out.println("REGISTRATION FINISHED");
             waitingForRPS();
+            System.out.println("RPS FINISHED");
             waitingForShipToPlaces();
+            System.out.println("SHIPS_PLACED FINISHED");
+
+            for(PlayerHandler player : playerHandlers) {
+                player.setDefenderBoard(player.ships);
+            }
+
+            //Inital Send
+            for (PlayerHandler player : playerHandlers) {
+                if(player.getRpsWon()){
+                    player.setPlayerStatus(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
+                    player.sendMessageToUser(ServerCommands.ATTACKER.name() + " " + player.getAttackerBoard().castToString());
+                }else {
+                    player.setPlayerStatus(ServerCommands.DEFENDER.name());
+                    player.sendMessageToUser(ServerCommands.DEFENDER.name());
+                }
+            }
+
+            System.out.println("Waiting for attacker move...");
+            while(running){
+                PlayerHandler playerAttacker = null;
+                PlayerHandler playerDefender = null;
+                //Waiting for Attackermove
+                for(PlayerHandler player : playerHandlers) {
+                    if(player.getPlayerStatus().equals(ServerCommands.ATTACKER.name())){
+                        playerAttacker = player;
+                        while(!player.playerAlreadyAttacked()){}
+                    }
+                }
+
+                for(PlayerHandler player : playerHandlers) {
+                    if(player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())){
+                        playerDefender = player;
+                    }
+                }
+                checkIfSomeoneWons(playerDefender, playerAttacker);
+
+                changeRoles();
+            }
 
 
             //TODO
@@ -56,8 +98,49 @@ public class SchiffeVersenkenServer {
         }
     }
 
-    private void waitingForShipToPlaces() {
+    private static void checkIfSomeoneWons(PlayerHandler playerDefender, PlayerHandler playerAttacker) {
+        int counter = 0;
+        for(Ship ship: playerDefender.ships){
+            if (ship.isShipDestroyed()){
+                counter++;
+            }
+        }
+        if(counter == playerDefender.ships.size()){
+            playerDefender.sendMessageToUser("LOST");
+            playerAttacker.sendMessageToUser("WON");
+        }
+    }
 
+    private void changeRoles() {
+        for(PlayerHandler player : playerHandlers) {
+            if(player.getPlayerStatus().equals(ServerCommands.DEFENDER.name())){
+                player.setPlayerStatus(ServerCommands.ATTACKER.name());
+            }else {
+                player.setPlayerStatus(ServerCommands.DEFENDER.name());
+            }
+        }
+    }
+
+    private void waitingForShipToPlaces() {
+        int counter = 0;
+        System.out.println("Waiting for ship to places...");
+
+        for (PlayerHandler player : playerHandlers) {
+            System.out.println(player.ships.size());
+            if (player.ships.size() == 10) {
+                counter += 1;
+            }else {
+                counter = 0;
+            }
+        }
+        if (!(counter == 2)) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            waitingForShipToPlaces();
+        }
     }
 
     private void waitingForRPS() throws InterruptedException {
@@ -82,12 +165,14 @@ public class SchiffeVersenkenServer {
             playerHandlers.get(0).setRpsWon(false);
             playerHandlers.get(1).sendMessageToUser(ServerCommands.WON.toString());
             playerHandlers.get(1).setRpsWon(true);
+            currenplayernumber = 1;
 
         } else {
             playerHandlers.get(1).sendMessageToUser(ServerCommands.LOST.toString());
             playerHandlers.get(1).setRpsWon(false);
             playerHandlers.get(0).sendMessageToUser(ServerCommands.WON.toString());
             playerHandlers.get(0).setRpsWon(true);
+            currenplayernumber = 0;
         }
 
 

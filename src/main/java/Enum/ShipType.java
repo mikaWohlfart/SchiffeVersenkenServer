@@ -1,10 +1,10 @@
 package Enum;
 
 public enum ShipType {
-    BATTLESHIP("Battleship", 5),
-    CRUISER("Cruiser", 4),
-    DESTROYER("Destroyer", 3),
-    SUBMARINE("Submarine", 2);
+    BATTLESHIP("Battleship", 4),
+    CRUISER("Cruiser", 3),
+    DESTROYER("Destroyer", 2),
+    SUBMARINE("Submarine", 1);
 
     private final String name; // Name of the ship
     private final int length;  // Length of the ship

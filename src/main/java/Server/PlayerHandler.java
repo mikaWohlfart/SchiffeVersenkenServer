@@ -4,16 +4,17 @@ import Interfaces.IPlayerHandler;
 import Enum.PlayerCommands;
 import Enum.ServerCommands;
 import Enum.RPS_GAME;
+import Enum.Coordinates;
 import Interfaces.Methods;
+import Enum.ShipType;
+import Enum.Rotation;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class PlayerHandler extends Thread implements IPlayerHandler {
     private SchiffeVersenkenServer schiffeVersenkenServer;
@@ -24,13 +25,24 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     private boolean isRegistered;
     private RPS_GAME rps;
     private boolean rpsWon;
-    Map<PlayerCommands, Methods> actions = new HashMap<>();
+    private String playerStatus;
+    private Board attackerBoard;
+    private Board defenderBoard;
+    private boolean playerAlreadyAttacked;
 
-    public PlayerHandler(SchiffeVersenkenServer schiffeVersenkenServer, Socket socket, int playernumber) {
+    Map<PlayerCommands, Methods> actions = new HashMap<>();
+    List<Ship> ships = new ArrayList<>();
+
+    public PlayerHandler(SchiffeVersenkenServer schiffeVersenkenServer, Socket socket, int playernumber, Board attackerBoard) {
         this.clientSocket = socket;
         this.schiffeVersenkenServer = schiffeVersenkenServer;
         this.playernumber = playernumber;
         this.playerCommandInputHandlerIndexed();
+        this.attackerBoard = attackerBoard;
+        playerAlreadyAttacked = false;
+    }
+
+    public PlayerHandler() {
     }
 
     public void run() {
@@ -79,15 +91,170 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     }
 
     private void handleRegister(String[] message) {
-        playername = message[1];
-        isRegistered = true;
-        sendMessageToUser("Welcome " + playername);
-        System.out.println("Befehl REGISTER verarbeitet.");
+        if (message[1] != null && message[1].length() > 1) {
+            playername = message[1];
+            isRegistered = true;
+            sendMessageToUser(ServerCommands.REGISTERED.name());
+        } else {
+            sendMessageToUser(ServerCommands.DENIED.name());
+        }
     }
 
     private void handleShipAdd(String[] message) {
 
+        if (message != null && message.length == 4 && ships != null && !checkShipLimitReachedPerType(message[1]) && ships.size() < 10) {
+            String shipType = message[1];
+            String coordinates = message[2];
+            String rotation = message[3];
+            if (shipType != null && !shipType.isEmpty()) {
+                boolean isValid = checkIfShipPositionIsValid(shipType, coordinates, rotation);
+                if (isValid) {
+                    sendMessageToUser(ServerCommands.PLACED.name());
+                } else {
+                    sendMessageToUser(ServerCommands.REJECTED.name());
+                }
+            }
+        } else {
+            sendMessageToUser(ServerCommands.REJECTED.name());
+        }
         System.out.println("Befehl SHIP_ADD verarbeitet.");
+    }
+
+    private boolean checkShipLimitReachedPerType(String shipType) {
+        if (shipType != null && !shipType.isEmpty()) {
+            int counter = 0;
+            if (shipType.equals(ShipType.BATTLESHIP.getName())) {
+                for (Ship ship : ships) {
+                    if (ship.getShipType() == ShipType.BATTLESHIP) {
+                        counter++;
+                    }
+                }
+                if (counter == 1) {
+                    return true;
+                }
+            }
+            counter = 0;
+            if (shipType.equals(ShipType.CRUISER.getName())) {
+                for (Ship ship : ships) {
+                    if (ship.getShipType() == ShipType.CRUISER) {
+                        counter++;
+                    }
+                }
+                if (counter == 2) {
+                    return true;
+                }
+            }
+            counter = 0;
+            if (shipType.equals(ShipType.DESTROYER.getName())) {
+                for (Ship ship : ships) {
+                    if (ship.getShipType() == ShipType.DESTROYER) {
+                        counter++;
+                    }
+                }
+                if (counter == 3) {
+                    return true;
+                }
+            }
+            counter = 0;
+            if (shipType.equals(ShipType.SUBMARINE.getName())) {
+                for (Ship ship : ships) {
+                    if (ship.getShipType() == ShipType.SUBMARINE) {
+                        counter++;
+                    }
+                }
+                if (counter == 4) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean checkIfShipPositionIsValid(String shipType, String coordinates, String rotation) {
+        List<int[]> coordinatesInInt = coordinatesToInt(shipType, coordinates, rotation);
+        Rotation rotationEnum = Rotation.valueOf(rotation);
+        if (rotationEnum == Rotation.RIGHT) {
+            if (coordinatesInInt.get(coordinatesInInt.size() - 1)[1] >= 10) {
+                return false;
+            }
+        } else {
+            if (coordinatesInInt.get(coordinatesInInt.size() - 1)[0] >= 10) {
+                return false;
+            }
+        }
+
+        if (ships != null) {
+            boolean collisiondetected = checkIfShipsCollide(coordinatesInInt);
+            if (!collisiondetected) {
+                System.out.println("test");
+                ships.add(new Ship(ShipType.valueOf(shipType), coordinatesInInt, Rotation.valueOf(rotation)));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean checkIfShipsCollide(List<int[]> koordinatesInInt) {
+        if (koordinatesInInt.size() > 1) {
+            if (koordinatesInInt.get(0)[0] < koordinatesInInt.get(1)[0]) {
+                if (koordinatesInInt.get(0)[0] + koordinatesInInt.size() >= 10) {
+                    return true;
+                }
+            } else if (koordinatesInInt.get(0)[1] < koordinatesInInt.get(1)[1]) {
+                if (koordinatesInInt.get(0)[1] + koordinatesInInt.size() >= 10) {
+                    return true;
+                }
+            }
+        }else{
+            if(koordinatesInInt.get(0)[0] >= 10 || koordinatesInInt.get(0)[1] >= 10){
+                return true;
+            }
+        }
+
+        for (Ship ship : ships) {
+            List<int[]> coordinates = ship.getCoordinates();
+            for (int[] coordinate : coordinates) {
+                for (int[] coordinateShipToPlace : koordinatesInInt) {
+                    if (coordinateShipToPlace[0] == coordinate[0]) {
+                        if (coordinateShipToPlace[1] == coordinate[1] || (coordinateShipToPlace[1] - 1) == coordinate[1] || (coordinateShipToPlace[1] + 1) == coordinate[1]) {
+                            return true;
+                        }
+                    }
+                    if (coordinateShipToPlace[1] == coordinate[1]) {
+                        if (coordinateShipToPlace[0] == coordinate[0] || (coordinateShipToPlace[0] - 1) == coordinate[0] || (coordinateShipToPlace[0] + 1) == coordinate[0]) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public List<int[]> coordinatesToInt(String shipType, String coordinates, String rotation) {
+        List<int[]> coordinatesInInt = new ArrayList<>();
+        ShipType shipTypeEnum = ShipType.valueOf(shipType);
+        Rotation rotationEnum = Rotation.valueOf(rotation);
+
+        if (coordinates != null && coordinates.length() == 2) {
+            String coordinateColumn = coordinates.substring(0, 1);
+            String coordinateRow = coordinates.substring(1, 2);
+            int koordinateColumnInt = Coordinates.valueOf(coordinateColumn).ordinal();
+            int koordinateRowInt = Integer.parseInt(coordinateRow);
+            coordinatesInInt.add(new int[]{koordinateColumnInt, koordinateRowInt});
+            for (int i = 0; i < shipTypeEnum.getLength() - 1; i++) {
+                if (rotationEnum == Rotation.RIGHT) {
+                    koordinateColumnInt += 1;
+                    coordinatesInInt.add(new int[]{koordinateColumnInt, koordinateRowInt});
+                } else {
+                    koordinateRowInt += 1;
+                    coordinatesInInt.add(new int[]{koordinateColumnInt, koordinateRowInt});
+                }
+            }
+        } else {
+            sendMessageToUser(ServerCommands.REJECTED.name());
+        }
+        return coordinatesInInt;
     }
 
     private void handleRPS(String[] message) {
@@ -96,14 +263,23 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
     }
 
     private void handleBomb(String[] message) {
+        if (playerStatus.equals(ServerCommands.ATTACKER.name()) && !playerAlreadyAttacked) {
+            if (message[1] != null && message[1].length() == 2) {
+                int attackerColumn = Integer.parseInt(message[1].substring(0, 1));
+                int attackerRow = Integer.parseInt(message[1].substring(1, 2));
+                attackerBoard.placeBomb(attackerColumn, attackerRow);
+                playerAlreadyAttacked = true;
+            }
+
+        }
         System.out.println("Befehl BOMB verarbeitet.");
     }
 
     private void playerCommandInputHandlerIndexed() {
-        actions.put(PlayerCommands.REGISTER, (String[] message) -> handleRegister(message));
-        actions.put(PlayerCommands.SHIP_ADD, (String[] message) -> handleShipAdd(message));
-        actions.put(PlayerCommands.RPS, (String[] message) -> handleRPS(message));
-        actions.put(PlayerCommands.BOMB, (String[] message) -> handleBomb(message));
+        actions.put(PlayerCommands.REGISTER, this::handleRegister);
+        actions.put(PlayerCommands.SHIP_ADD, this::handleShipAdd);
+        actions.put(PlayerCommands.RPS, this::handleRPS);
+        actions.put(PlayerCommands.BOMB, this::handleBomb);
     }
 
     private void messageHandler(String message) {
@@ -123,7 +299,7 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         }
     }
 
-    public boolean getIsRegsitered(){
+    public boolean getIsRegsitered() {
         return isRegistered;
     }
 
@@ -131,11 +307,39 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
         return rps;
     }
 
-    public void restartRPS(){
+    public void restartRPS() {
         rps = null;
     }
 
     public void setRpsWon(boolean rpsWon) {
         this.rpsWon = rpsWon;
+    }
+
+    public void setPlayerStatus(String playerStatus) {
+        this.playerStatus = playerStatus;
+    }
+
+    public String getPlayerStatus() {
+        return playerStatus;
+    }
+
+    public boolean getRpsWon() {
+        return rpsWon;
+    }
+
+    public Board getAttackerBoard() {
+        return attackerBoard;
+    }
+
+    public Board getDefenderBoard() {
+        return defenderBoard;
+    }
+
+    public void setDefenderBoard(List<Ship> ships) {
+        defenderBoard = new Board(ships);
+    }
+
+    public boolean playerAlreadyAttacked() {
+        return playerAlreadyAttacked;
     }
 }
