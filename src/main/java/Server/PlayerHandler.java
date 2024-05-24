@@ -236,9 +236,10 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
 
         if (coordinates != null && coordinates.length() == 2) {
             String coordinateColumn = coordinates.substring(0, 1);
-            String coordinateRow = coordinates.substring(1, 2);
+            String coordinateRow = coordinates.substring(1);
             int koordinateColumnInt = Coordinates.valueOf(coordinateColumn).ordinal();
             int koordinateRowInt = Integer.parseInt(coordinateRow);
+            koordinateRowInt -= 1;
             coordinatesInInt.add(new int[]{koordinateColumnInt, koordinateRowInt});
             for (int i = 0; i < shipTypeEnum.getLength() - 1; i++) {
                 if (rotationEnum == Rotation.RIGHT) {
@@ -264,7 +265,7 @@ public class PlayerHandler extends Thread implements IPlayerHandler {
             if (message[1] != null && message[1].length() == 2) {
                 String attackerColumn = (message[1].substring(0, 1));
                 Coordinates attackerCoordinates = Coordinates.valueOf(attackerColumn);
-                int attackerRow = Integer.parseInt(message[1].substring(1, message[1].length() - 1));
+                int attackerRow = Integer.parseInt(message[1].substring(1));
                 attackerRow--;
                 attackHitted = attackerBoard.placeBomb(attackerCoordinates.ordinal(), attackerRow);
                 playerAlreadyAttacked = true;
